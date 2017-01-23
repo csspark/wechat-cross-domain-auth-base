@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title> 普付宝 </title>
+    <script type="text/javascript">
+        /**
+         * 待授权的公众号
+         *
+         * @type {{appid: string, callback}}
+         */
+        var wechatAccount = {
+            'appid'         : 'wx6f33ea382befa1e2',
+            'callback'      : {
+                'ymf' : 'http://festpay.pufubao.net/wechat/base/auth/agency'
+            }
+        };
+
+        /**
+         * 授权对象
+         *
+         * @param config
+         */
+        function oauth(config){
+            this.options = config;
+        }
+
+        /**
+         * 获取url中的参数值
+         *
+         * @param name
+         * @returns {null}
+         * @constructor
+         */
+        oauth.prototype.getQueryString = function (name){
+            var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+            var r = window.location.search.substr(1).match(reg);
+            if(r!=null) return  unescape(r[2]); return null;
+        }
+
+        /**
+         * 字符串str 中 是否包含 substr
+         */
+        oauth.prototype.isContain  = function(str, substr) {
+            return str.indexOf(substr) >= 0;
+        }
+
+
+        var oAuthObj         = new oauth(wechatAccount);
+
+        /**
+         * ?state=ymf_arg1_arg2 type_param1_param2_... 可以传递多个参数
+         *
+         * @type {null}
+         */
+        var state            = oAuthObj.getQueryString('state');
+        var code             = oAuthObj.getQueryString('code');
+
+
+        if(state !== null) {
+            var urlArray     = window.location.href.split('?');
+            var redirect_uri = urlArray[0];
+            if (code === null) {
+                window.location = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=" + oAuthObj.options.appid + "&redirect_uri=" + redirect_uri + "&response_type=code&scope=snsapi_base&state=" + state + "#wechat_redirect";
+            } else {
+                var stateCode = state;
+                if(oAuthObj.isContain(state, '_')){
+                    stateCode = state.split('_').shift();
+                }
+
+                var redirect_uri = eval('oAuthObj.options.callback.' + stateCode);
+
+                if(redirect_uri === undefined) {
+                    window.location = redirect_uri;
+                }else{
+                    window.location = redirect_uri + '?code=' + code + '&state=' + state;
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+</body>
+</html>
